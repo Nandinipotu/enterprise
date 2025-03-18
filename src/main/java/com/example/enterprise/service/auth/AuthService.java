@@ -19,5 +19,7 @@ public interface AuthService {
 
     ResponseEntity<ApiResponse> signOut(SignOutRequest request);
     
-    
+    ResponseEntity<ApiResponse> enterpriseUserSignUp(LoginRequest loginRequest);
+
+   ResponseEntity<ApiResponse> enterpriseUserLogIn(LoginRequest loginRequest, HttpServletResponse response);
 }
