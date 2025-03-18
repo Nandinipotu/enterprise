@@ -22,11 +22,12 @@ import lombok.Setter;
 public class EnterPriseUser {
     @Id
     private String id;
+    private String userId;
     private String userEmail;
     private String userName;
     private String password;
     private String orgId;
-    private String role;
+    private List<String> role;
     private boolean isUserLoggedIn;
     private boolean isActive;
     private List<String> permissions;

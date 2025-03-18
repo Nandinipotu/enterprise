@@ -26,7 +26,8 @@ public enum ResponseMessage {
     TOKEN_INVALID("Invalid token"),
     TOKEN_MISSING("Token is missing"),
     TOKEN_BLACKLISTED("Token black listed"), 
-    USER_LOGGED_OUT_SUCCESSFULLY("Logged out successfully") ;
+    USER_LOGGED_OUT_SUCCESSFULLY("Logged out successfully"),
+    TOKEN_GENERATED_SUCCESSFULLY("Token Generated successfully") ;
 
     private final String message;
 

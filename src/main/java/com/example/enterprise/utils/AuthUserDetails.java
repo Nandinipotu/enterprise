@@ -4,7 +4,13 @@ import javax.crypto.SecretKey;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.env.Environment;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+
+import com.example.enterprise.entity.EnterPriseUser;
+import com.example.enterprise.security.EnterPriseUserDetailsImpl;
+import com.example.enterprise.security.UserDetailsImpl;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -35,5 +41,18 @@ public class AuthUserDetails {
 
         return null;
     }
+
+   public static String getUserId() {
+        String userId;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        EnterPriseUserDetailsImpl userDetails = (EnterPriseUserDetailsImpl) authentication.getPrincipal();
+        if (authentication.isAuthenticated()) {
+            userId = userDetails.getUserId();
+        } else {
+            userId = "null";
+        }
+        return userId;
+    }
+
 
 }

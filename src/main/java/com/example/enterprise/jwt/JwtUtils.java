@@ -96,6 +96,7 @@ public class JwtUtils {
     private Map<String, Object> enterpriseUserJwtClaimbs(EnterPriseUser user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userName", user.getUserName());
+        claims.put("userId", user.getUserId());
         claims.put("role", user.getRole());
         claims.put("permissions", user.getPermissions());
         claims.put("orgId", user.getOrgId());

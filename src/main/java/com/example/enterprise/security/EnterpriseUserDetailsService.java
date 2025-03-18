@@ -21,8 +21,6 @@ public class EnterpriseUserDetailsService implements UserDetailsService {
         EnterPriseUser enterpriseUser = enterpriseUserRepository.findByUserEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Enterprise user not found with email: " + email));
 
-        return new org.springframework.security.core.userdetails.User(
-                enterpriseUser.getUserEmail(), enterpriseUser.getPassword(), new ArrayList<>()
-        );
+        return EnterPriseUserDetailsImpl.build(enterpriseUser);
     }
 }

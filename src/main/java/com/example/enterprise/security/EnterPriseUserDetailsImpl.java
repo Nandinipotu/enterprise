@@ -15,41 +15,44 @@ public class EnterPriseUserDetailsImpl implements UserDetails {
     private String userName;
     private String password;
     private String orgId;
-    private String role;
+    private String userId;
+    private List<String> role;
     private List<String> permissions;
 
-    private final Collection<? extends GrantedAuthority> authorities;
-
-    public EnterPriseUserDetailsImpl(String userEmail, String userName, String password,
-                           String orgId, String role, List<String> permissions) {
+    public EnterPriseUserDetailsImpl(String userEmail, String userName, String userId,String password,
+            String orgId, List<String> role, List<String> permissions) {
         this.userEmail = userEmail;
         this.userName = userName;
+        this.userId = userId;
         this.password = password;
         this.orgId = orgId;
         this.role = role;
         this.permissions = permissions;
-
-        this.authorities = permissions.stream()
-                .map(SimpleGrantedAuthority::new)
-                .collect(Collectors.toList());
-
-
-        ((List<GrantedAuthority>) this.authorities).add(new SimpleGrantedAuthority("ROLE_" + role.toUpperCase()));
     }
 
     public static EnterPriseUserDetailsImpl build(EnterPriseUser user) {
         return new EnterPriseUserDetailsImpl(
                 user.getUserEmail(),
                 user.getUserName(),
+                user.getUserId(),
                 user.getPassword(),
                 user.getOrgId(),
                 user.getRole(),
-                user.getPermissions()
-        );
+                user.getPermissions());
     }
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
+        List<GrantedAuthority> authorities = role.stream()
+                .map(r -> new SimpleGrantedAuthority("ROLE_" + r.toUpperCase()))
+                .collect(Collectors.toList());
+
+        List<GrantedAuthority> permissionsAuthorities = permissions.stream()
+                .map(SimpleGrantedAuthority::new)
+                .collect(Collectors.toList());
+
+        authorities.addAll(permissionsAuthorities);
+
         return authorities;
     }
 
@@ -66,12 +69,16 @@ public class EnterPriseUserDetailsImpl implements UserDetails {
     public String getUserName() {
         return userName;
     }
-
+    
+    public String getUserId() {
+        return userId;
+    }
+    
     public String getOrgId() {
         return orgId;
     }
 
-    public String getRole() {
+    public List<String> getRole() {
         return role;
     }
 
