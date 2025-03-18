@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 public class RefreshToken {
     @Id
     private String id;
-
+    
     @DBRef
     private EnterPriseUser users;
     @NotNull(message = "field is mandatory")

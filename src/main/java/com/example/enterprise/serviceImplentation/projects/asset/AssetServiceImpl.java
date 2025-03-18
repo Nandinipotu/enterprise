@@ -7,14 +7,11 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
@@ -23,15 +20,13 @@ import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
-import com.example.enterprise.dto.request.LoginRequest;
+
 import com.example.enterprise.dto.response.AssetResponse;
 import com.example.enterprise.entity.RefreshToken;
-import com.example.enterprise.security.UserDetailsImpl;
+
 import com.example.enterprise.service.project.AssetService;
 import com.example.enterprise.utils.ApiResponse;
 import com.example.enterprise.utils.AuthUserDetails;
@@ -42,8 +37,6 @@ import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import jakarta.validation.ConstraintViolation;
 import lombok.RequiredArgsConstructor;
 import org.bson.Document;
 
@@ -144,15 +137,6 @@ public class AssetServiceImpl implements AssetService {
         userDataMap.put("companyId", requiredFields.getString("companyId"));
 
         return userDataMap;
-    }
-
-    private AssetResponse buildUserResponse(String jwt, Date expirationTime) {
-        AssetResponse userResponse = new AssetResponse();
-        userResponse.setExpirationTime(expirationTime);
-        userResponse.setToken(jwt);
-        // userResponse.setRefreshToken(refreshToken.getToken());
-        // userResponse.setRefreshTokenExpiryTime(formattedExpiryTime);
-        return userResponse;
     }
 
     public String generateJwtToken(String email, Map<String, Object> additionalData) throws UnknownHostException {
