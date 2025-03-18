@@ -54,4 +54,22 @@ public class AuthController {
             return ResponseEntity.internalServerError().body(new ApiResponse(false, e.getMessage()));
         }
     }
+
+    @PostMapping("/enterprise-user-signUp")
+    public ResponseEntity<ApiResponse> enterpriseUserSignUp( @RequestBody @Valid LoginRequest loginRequest){
+        try {
+            return authService.enterpriseUserSignUp(loginRequest);
+        } catch (Exception e) {
+           return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    @PostMapping("/enterprise-user-login")
+    public ResponseEntity<ApiResponse> enterpriseUserlogIn( @RequestBody @Valid LoginRequest loginRequest,HttpServletResponse httpResponse){
+        try {
+            return authService.enterpriseUserLogIn(loginRequest,httpResponse);
+        } catch (Exception e) {
+           return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
 }

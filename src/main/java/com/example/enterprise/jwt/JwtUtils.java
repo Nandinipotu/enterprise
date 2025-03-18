@@ -5,6 +5,7 @@ import io.jsonwebtoken.security.Keys;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
+import com.example.enterprise.entity.EnterPriseUser;
 import com.example.enterprise.entity.User;
 
 import javax.crypto.SecretKey;
@@ -12,7 +13,7 @@ import java.util.*;
 
 @Component
 public class JwtUtils {
-    
+
     @Value("${enterprise.app.jwtSecret}")
     private String secretKey;
 
@@ -27,11 +28,11 @@ public class JwtUtils {
 
     public String generateToken(User user) {
         return Jwts.builder()
-                .subject(user.getEmail())  
-                .claims(jwtClaims(user))   
-                .issuedAt(new Date())  
-                .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))  
-                .signWith(key())  
+                .subject(user.getEmail())
+                .claims(jwtClaims(user))
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+                .signWith(key())
                 .compact();
     }
 
@@ -74,7 +75,6 @@ public class JwtUtils {
         return invalidatedTokens.containsKey(token) && invalidatedTokens.get(token).after(new Date());
     }
 
-    
     private Map<String, Object> jwtClaims(User user) {
         Map<String, Object> claims = new HashMap<>();
         claims.put("userName", user.getUserName());
@@ -82,5 +82,23 @@ public class JwtUtils {
         claims.put("permissions", user.getPermission());
         return claims;
     }
-}
 
+    public String generateEnterpriseUserToken(EnterPriseUser user) {
+        return Jwts.builder()
+                .subject(user.getUserEmail())
+                .claims(enterpriseUserJwtClaimbs(user))
+                .issuedAt(new Date())
+                .expiration(new Date(System.currentTimeMillis() + jwtExpirationMs))
+                .signWith(key())
+                .compact();
+    }
+
+    private Map<String, Object> enterpriseUserJwtClaimbs(EnterPriseUser user) {
+        Map<String, Object> claims = new HashMap<>();
+        claims.put("userName", user.getUserName());
+        claims.put("role", user.getRole());
+        claims.put("permissions", user.getPermissions());
+        claims.put("orgId", user.getOrgId());
+        return claims;
+    }
+}
