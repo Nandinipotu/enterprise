@@ -90,7 +90,7 @@ public class WebSecurityConfig {
 
         return httpSecurity
                 .csrf(customize -> customize.disable())
-                .authorizeHttpRequests(request -> request.requestMatchers("/auth/**", "/swagger-ui/**").permitAll()
+                .authorizeHttpRequests(request -> request.requestMatchers("/auth/**","/projects/**", "/swagger-ui/**").permitAll()
                         .requestMatchers(swaggerMatcher).permitAll()
                         .requestMatchers(swaggerApiDocsMatcher).permitAll()
                         .anyRequest().authenticated())
