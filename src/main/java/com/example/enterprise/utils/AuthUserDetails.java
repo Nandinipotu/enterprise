@@ -54,5 +54,18 @@ public class AuthUserDetails {
         return userId;
     }
 
+    public static String getCompanyUserId() {
+        String userId;
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsImpl userDetails = (UserDetailsImpl) authentication.getPrincipal();
+        if (authentication.isAuthenticated()) {
+            userId = userDetails.getUserId();
+        } else {
+            userId = "null";
+        }
+        return userId;
+    }
+
+
 
 }

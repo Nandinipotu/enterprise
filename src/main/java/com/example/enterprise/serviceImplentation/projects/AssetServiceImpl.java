@@ -1,4 +1,4 @@
-package com.example.enterprise.serviceImplentation.projects.asset;
+package com.example.enterprise.serviceImplentation.projects;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -51,7 +51,6 @@ public class AssetServiceImpl implements AssetService {
     private static final String SECRET_KEY = "======================AssetManagement==============================================";
 
     private final AuthUserDetails authUserDetails;
-    private final AssetRefreshToken assetRefreshToken;
 
     private Key key() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET_KEY));
@@ -76,16 +75,16 @@ public class AssetServiceImpl implements AssetService {
 
             Map<String, Object> userDataMap = buildUserDataMap(userDetails, request);
 
-            // Generate refresh token
-            RefreshToken refreshToken = assetRefreshToken.createRefreshToken(userId);
-            Instant expiryInstant = refreshToken.getExpiryDate();
-            LocalDateTime expiryDateTime = LocalDateTime.ofInstant(expiryInstant, ZoneId.systemDefault());
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            String formattedExpiryTime = expiryDateTime.format(formatter);
+            // // Generate refresh token
+            // RefreshToken refreshToken = assetRefreshToken.createRefreshToken(userId);
+            // Instant expiryInstant = refreshToken.getExpiryDate();
+            // LocalDateTime expiryDateTime = LocalDateTime.ofInstant(expiryInstant, ZoneId.systemDefault());
+            // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+            // String formattedExpiryTime = expiryDateTime.format(formatter);
 
-            // Add refresh token details to user data map
-            userDataMap.put("refreshToken", refreshToken.getToken());
-            userDataMap.put("refreshTokenExpiryTime", formattedExpiryTime);
+            // // Add refresh token details to user data map
+            // userDataMap.put("refreshToken", refreshToken.getToken());
+            // userDataMap.put("refreshTokenExpiryTime", formattedExpiryTime);
 
             String jwt = generateJwtToken(userEmail, userDataMap);
             Date expirationTime = getExpirationDateFromJwtToken(jwt);
@@ -94,8 +93,8 @@ public class AssetServiceImpl implements AssetService {
             AssetResponse userResponse = new AssetResponse();
             userResponse.setExpirationTime(expirationTime);
             userResponse.setToken(jwt);
-            userResponse.setRefreshToken(refreshToken.getToken());
-            userResponse.setRefreshTokenExpiryTime(formattedExpiryTime);
+            // userResponse.setRefreshToken(refreshToken.getToken());
+            // userResponse.setRefreshTokenExpiryTime(formattedExpiryTime);
 
             return ResponseEntity.ok(new ApiResponse(true, "User Login Successfully", List.of(userResponse)));
 
@@ -171,9 +170,7 @@ public class AssetServiceImpl implements AssetService {
         try {
             return InetAddress.getLocalHost().getHostAddress();
         } catch (UnknownHostException e) {
-            // Log or handle the exception appropriately
-            e.printStackTrace(); // Example: Printing the stack trace
-            return null; // Or return a default IP address or handle it in another way
+            return null; 
         }
     }
 

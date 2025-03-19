@@ -72,4 +72,24 @@ public class AuthController {
            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
         }
     }
+
+    @PostMapping("/refresh-token")
+    public ResponseEntity<ApiResponse> refreshToken(String token ,HttpServletRequest request){
+        try {
+            return authService.refreshToken(token,request);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
+
+    @PostMapping("/company-refresh-token")
+    public ResponseEntity<ApiResponse> companyRefreshToken(String token ,HttpServletRequest request){
+        try {
+            return authService.userRefreshToken(token,request);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(new ApiResponse(false, e.getMessage()));
+        }
+    }
 }

@@ -12,6 +12,4 @@ import lombok.NoArgsConstructor;
 public class AssetResponse {
     private String token;
     private Date expirationTime;
-    private String refreshToken;
-    private String refreshTokenExpiryTime;
 }

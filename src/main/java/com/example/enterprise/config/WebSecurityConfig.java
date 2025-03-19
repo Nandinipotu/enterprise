@@ -1,6 +1,5 @@
 package com.example.enterprise.config;
 
-import java.net.http.HttpRequest;
 import java.util.Arrays;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -8,7 +7,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -28,7 +26,6 @@ import com.example.enterprise.jwt.AuthEntryPoint;
 import com.example.enterprise.jwt.AuthTokenFilter;
 import com.example.enterprise.security.UserDetailServiceImpl;
 
-import lombok.RequiredArgsConstructor;
 
 @Configuration
 @EnableWebSecurity
@@ -64,10 +61,11 @@ public class WebSecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration) throws Exception {
+    public AuthenticationManager authenticationManager(AuthenticationConfiguration authenticationConfiguration)
+            throws Exception {
         return authenticationConfiguration.getAuthenticationManager();
     }
-    
+
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
@@ -89,11 +87,13 @@ public class WebSecurityConfig {
         MvcRequestMatcher swaggerApiDocsMatcher = new MvcRequestMatcher(introspector, "/v3/api-docs/**");
 
         return httpSecurity
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler) )
                 .csrf(customize -> customize.disable())
-                .authorizeHttpRequests(request -> request.requestMatchers("/auth/**","/projects/**", "/swagger-ui/**").permitAll()
-                        .requestMatchers(swaggerMatcher).permitAll()
-                        .requestMatchers(swaggerApiDocsMatcher).permitAll()
-                        .anyRequest().authenticated())
+                .authorizeHttpRequests(
+                        request -> request.requestMatchers("/auth/**", "/projects/**", "/swagger-ui/**").permitAll()
+                                .requestMatchers(swaggerMatcher).permitAll()
+                                .requestMatchers(swaggerApiDocsMatcher).permitAll()
+                                .anyRequest().authenticated())
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(authenticationJwtTokenFilter(), UsernamePasswordAuthenticationFilter.class)
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))

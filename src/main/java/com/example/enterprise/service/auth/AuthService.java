@@ -18,8 +18,12 @@ public interface AuthService {
     ResponseEntity<ApiResponse> logIn(LoginRequest loginRequest, HttpServletResponse response);
 
     ResponseEntity<ApiResponse> signOut(SignOutRequest request);
-    
+
     ResponseEntity<ApiResponse> enterpriseUserSignUp(LoginRequest loginRequest);
 
-   ResponseEntity<ApiResponse> enterpriseUserLogIn(LoginRequest loginRequest, HttpServletResponse response);
+    ResponseEntity<ApiResponse> enterpriseUserLogIn(LoginRequest loginRequest, HttpServletResponse response);
+
+    ResponseEntity<ApiResponse> refreshToken(String token, HttpServletRequest request);
+
+    ResponseEntity<ApiResponse> userRefreshToken(String token,HttpServletRequest request);
 }

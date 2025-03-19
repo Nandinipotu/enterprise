@@ -15,12 +15,16 @@ import com.example.enterprise.dto.request.LoginRequest;
 import com.example.enterprise.dto.request.SignOutRequest;
 import com.example.enterprise.dto.request.SignUpRequest;
 import com.example.enterprise.entity.EnterPriseUser;
+import com.example.enterprise.entity.RefreshToken;
 import com.example.enterprise.entity.User;
+import com.example.enterprise.entity.UserRefreshToken;
 import com.example.enterprise.jwt.JwtUtils;
 import com.example.enterprise.repository.EnterPriseUserRepository;
 import com.example.enterprise.repository.UserRepository;
 import com.example.enterprise.service.auth.AuthService;
+import com.example.enterprise.serviceImplentation.projects.RefreshTokenServiceImpl;
 import com.example.enterprise.utils.ApiResponse;
+import com.example.enterprise.utils.AuthUserDetails;
 import com.example.enterprise.utils.ResponseMessage;
 
 import jakarta.servlet.http.Cookie;
@@ -36,6 +40,7 @@ public class AuthServiceImpl implements AuthService {
     private final PasswordEncoder passwordEncoder;
     private final JwtUtils jwtUtils;
     private final EnterPriseUserRepository enterPriseUserRepo;
+    private final RefreshTokenServiceImpl refreshTokenService;
 
     @Override
     public ResponseEntity<ApiResponse> signUp(LoginRequest loginRequest) {
@@ -69,11 +74,10 @@ public class AuthServiceImpl implements AuthService {
     public ResponseEntity<ApiResponse> logIn(LoginRequest loginRequest, HttpServletResponse response) {
         User user = userRepository.findByEmail(loginRequest.getEmail())
                 .orElseThrow(() -> new BadCredentialsException(ResponseMessage.INVALID_CREDENTIALS.getMessage()));
-
+                
         if (!passwordEncoder.matches(loginRequest.getPassword(), user.getPassword())) {
             throw new BadCredentialsException(ResponseMessage.INVALID_CREDENTIALS.getMessage());
         }
-
         String jwt = jwtUtils.generateToken(user);
         Cookie cookies = new Cookie("jwtToken", jwt);
         cookies.setMaxAge(60 * 60 * 24);
@@ -83,8 +87,12 @@ public class AuthServiceImpl implements AuthService {
         cookies.setAttribute("SameSite", "Lax");
         response.addCookie(cookies);
 
+        UserRefreshToken refreshToken = refreshTokenService.createUserRefreshToken(user.getUserId());
+
         Map<String, Object> authToken = new LinkedHashMap<>();
         authToken.put("token", jwt);
+        authToken.put("refreshToken", refreshToken.getToken());
+        authToken.put("refreshTokenExpiryDate", refreshToken.getExpiryDate());
 
         return ResponseEntity.ok()
                 .body(new ApiResponse(true, ResponseMessage.USER_LOGGED_IN_SUCCESS.getMessage(), authToken));
@@ -142,11 +150,47 @@ public class AuthServiceImpl implements AuthService {
         cookies.setAttribute("SameSite", "Lax");
         response.addCookie(cookies);
 
+        RefreshToken refreshToken = refreshTokenService.createRefreshToken(user.getUserId());
+
         Map<String, Object> authToken = new LinkedHashMap<>();
         authToken.put("token", jwt);
+        authToken.put("refreshToken", refreshToken.getToken());
+        authToken.put("refreshTokenExpiryDate", refreshToken.getExpiryDate());
 
         return ResponseEntity.ok()
                 .body(new ApiResponse(true, ResponseMessage.USER_LOGGED_IN_SUCCESS.getMessage(), authToken));
     }
 
+    @Override
+    public ResponseEntity<ApiResponse> refreshToken(String token,HttpServletRequest request) {
+        String userId = AuthUserDetails.getUserId();
+        return refreshTokenService.findByToken(token)
+                .map(refreshToken -> {
+                    if (!refreshTokenService.isValid(refreshToken)) {
+                        refreshTokenService.deleteByenterpriseUserId(userId);
+                        return ResponseEntity.status(403).body(new ApiResponse(false, "Refresh token expired. Please sign in again."));
+                    }
+                    Optional<EnterPriseUser> user= enterPriseUserRepo.findByUserId(userId);
+                    String newJwt = jwtUtils.generateEnterpriseUserToken(user.get());
+                    return ResponseEntity.ok(new ApiResponse(true, "Token refreshed", Map.of("accessToken", newJwt)));
+                })
+                .orElseGet(() -> ResponseEntity.status(403).body(new ApiResponse(false, "Invalid refresh token")));
+    }
+
+    @Override
+    public ResponseEntity<ApiResponse> userRefreshToken(String token,HttpServletRequest request) {
+        String userId = AuthUserDetails.getUserId();
+        return refreshTokenService.findByUserToken(token)
+                .map(refreshToken -> {
+                    if (!refreshTokenService.isValid(refreshToken)) {
+                        refreshTokenService.deleteByUserId(userId);
+                        return ResponseEntity.status(403).body(new ApiResponse(false, "Refresh token expired. Please sign in again."));
+                    }
+                    Optional<User> user= userRepository.findByUserId(userId);
+                    String newJwt = jwtUtils.generateToken(user.get());
+                    return ResponseEntity.ok(new ApiResponse(true, "Token refreshed", Map.of("accessToken", newJwt)));
+                })
+                .orElseGet(() -> ResponseEntity.status(403).body(new ApiResponse(false, "Invalid refresh token")));
+    }
+    
 }

@@ -15,6 +15,7 @@ public class UserDetailsImpl implements UserDetails {
 
     private String userName;
     private String email;
+    private String userId;
 
     @JsonIgnore
     private String password;
@@ -25,10 +26,11 @@ public class UserDetailsImpl implements UserDetails {
     @JsonIgnore
     private List<String> permission;
 
-    public UserDetailsImpl(String userName, String email, String password,
+    public UserDetailsImpl(String userName, String email, String userId, String password,
                                boolean isActive, boolean isUserLoggedIn, List<String> roles, List<String> permission) {
         this.userName = userName;
         this.email = email;
+        this.userId = userId;
         this.password = password;
         this.isActive = isActive;
         this.isUserLoggedIn = isUserLoggedIn;
@@ -40,6 +42,7 @@ public class UserDetailsImpl implements UserDetails {
         return new UserDetailsImpl(
                 user.getUserName(),
                 user.getEmail(),
+                user.getUserId(),
                 user.getPassword(),
                 user.isActive(),
                 user.isUserLoggedIn(),
@@ -70,7 +73,7 @@ public class UserDetailsImpl implements UserDetails {
 
     @Override
     public String getUsername() {
-        return email;
+        return userName;
     }
 
     @Override
@@ -98,8 +101,12 @@ public class UserDetailsImpl implements UserDetails {
     }
 
 
-    public String getUserName() {
-        return userName;
+    public String getEmail() {
+        return email;
+    }
+
+    public String getUserId() {
+        return userId;
     }
 
     public List<String> getRoles() {
