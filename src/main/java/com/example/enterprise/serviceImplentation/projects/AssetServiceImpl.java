@@ -102,7 +102,6 @@ public class AssetServiceImpl implements AssetService {
             return ResponseEntity.status(HttpStatus.FORBIDDEN)
                     .body(new ApiResponse(false, "Invalid Credentials"));
         } catch (Exception e) {
-            e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new ApiResponse(false, "Internal Server Error", e.getMessage()));
         }

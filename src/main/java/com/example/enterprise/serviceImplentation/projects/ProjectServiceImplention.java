@@ -11,6 +11,7 @@ import org.springframework.stereotype.Service;
 
 import com.example.enterprise.dto.ProjectsDTO;
 import com.example.enterprise.service.project.ProjectService;
+import com.example.enterprise.utils.AuthUserDetails;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,7 +24,7 @@ public class ProjectServiceImplention implements ProjectService {
 
     @Override
     public List<ProjectsDTO> getProjectList() {
-        String userId = "9856";
+        String userId = AuthUserDetails.getUserId();
         Criteria criteria = Criteria.where("userId").is(userId);
         LookupOperation projectLookup = Aggregation.lookup("projects", "projectId", "projectId", "ProjectDetails");
         

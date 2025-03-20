@@ -46,7 +46,7 @@ public class EnterPriseUserDetailsImpl implements UserDetails {
         List<GrantedAuthority> authorities = role.stream()
                 .map(r -> new SimpleGrantedAuthority("ROLE_" + r.toUpperCase()))
                 .collect(Collectors.toList());
-
+                
         List<GrantedAuthority> permissionsAuthorities = permissions.stream()
                 .map(SimpleGrantedAuthority::new)
                 .collect(Collectors.toList());

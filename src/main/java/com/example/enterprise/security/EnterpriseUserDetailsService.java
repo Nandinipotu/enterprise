@@ -20,7 +20,7 @@ public class EnterpriseUserDetailsService implements UserDetailsService {
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         EnterPriseUser enterpriseUser = enterpriseUserRepository.findByUserEmail(email)
                 .orElseThrow(() -> new UsernameNotFoundException("Enterprise user not found with email: " + email));
-
+                
         return EnterPriseUserDetailsImpl.build(enterpriseUser);
     }
 }
