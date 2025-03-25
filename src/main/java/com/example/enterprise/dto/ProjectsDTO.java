@@ -1,5 +1,8 @@
 package com.example.enterprise.dto;
 
+import java.net.URI;
+import java.nio.file.Path;
+
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -8,6 +11,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class ProjectsDTO {
-    String projectId;
-    String projectName;
+    private String projectId;
+    private String projectName;
+    private Path imagePath;
+    private URI projectURL;
+
 }

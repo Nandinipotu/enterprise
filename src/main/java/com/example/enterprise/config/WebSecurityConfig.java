@@ -90,7 +90,7 @@ public class WebSecurityConfig {
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler) )
                 .csrf(customize -> customize.disable())
                 .authorizeHttpRequests(
-                        request -> request.requestMatchers("/auth/**", "/projects/**", "/swagger-ui/**").permitAll()
+                        request -> request.requestMatchers("/auth/**", "/swagger-ui/**").permitAll()
                                 .requestMatchers(swaggerMatcher).permitAll()
                                 .requestMatchers(swaggerApiDocsMatcher).permitAll()
                                 .anyRequest().authenticated())

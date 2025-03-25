@@ -30,6 +30,7 @@ import com.example.enterprise.entity.RefreshToken;
 import com.example.enterprise.service.project.AssetService;
 import com.example.enterprise.utils.ApiResponse;
 import com.example.enterprise.utils.AuthUserDetails;
+import com.example.enterprise.utils.ProjectAccessToken;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
@@ -45,20 +46,17 @@ import org.bson.Document;
 public class AssetServiceImpl implements AssetService {
 
     private final MongoTemplate mongoTemplate;
-
+    private final ProjectAccessToken projectAccessToken;
     @Value("${enterprise.app.jwtExpirationMs}")
     private long jwtExpirationMs;
     private static final String SECRET_KEY = "======================AssetManagement==============================================";
-
     private final AuthUserDetails authUserDetails;
 
-    private Key key() {
-        return Keys.hmacShaKeyFor(Decoders.BASE64.decode(SECRET_KEY));
-    }
-
     @Override
-    public ResponseEntity<ApiResponse> assetSignIn(String projectId, HttpServletRequest request) {
-        try {
+    public Map<String, Object> assetSignIn(String projectId, HttpServletRequest request) throws UnknownHostException {
+        // try {
+
+            Map<String, Object> response = new HashMap<>();
 
             String userId = AuthUserDetails.getUserId();
             String userEmail = authUserDetails.getUserDetailsFromJwt(request);
@@ -66,45 +64,29 @@ public class AssetServiceImpl implements AssetService {
             Optional<Document> userDetailsOpt = fetchUserDetails(userId, projectId);
 
             if (userDetailsOpt.isEmpty()) {
-
-                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(new ApiResponse(false, "User details not found"));
+                response.put("error","User details not found");
+                return response;
             }
 
             Document userDetails = userDetailsOpt.get();
 
             Map<String, Object> userDataMap = buildUserDataMap(userDetails, request);
 
-            // // Generate refresh token
-            // RefreshToken refreshToken = assetRefreshToken.createRefreshToken(userId);
-            // Instant expiryInstant = refreshToken.getExpiryDate();
-            // LocalDateTime expiryDateTime = LocalDateTime.ofInstant(expiryInstant, ZoneId.systemDefault());
-            // DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-            // String formattedExpiryTime = expiryDateTime.format(formatter);
-
-            // // Add refresh token details to user data map
-            // userDataMap.put("refreshToken", refreshToken.getToken());
-            // userDataMap.put("refreshTokenExpiryTime", formattedExpiryTime);
-
-            String jwt = generateJwtToken(userEmail, userDataMap);
-            Date expirationTime = getExpirationDateFromJwtToken(jwt);
+            String jwt = projectAccessToken.generateTokenFromUsernamewithIp(userEmail, userDataMap,jwtExpirationMs,SECRET_KEY);
 
             // Prepare response object
-            AssetResponse userResponse = new AssetResponse();
-            userResponse.setExpirationTime(expirationTime);
-            userResponse.setToken(jwt);
-            // userResponse.setRefreshToken(refreshToken.getToken());
-            // userResponse.setRefreshTokenExpiryTime(formattedExpiryTime);
+            // AssetResponse userResponse = new AssetResponse();
+            // userResponse.setToken(jwt);
+            response.put("token", jwt);
+            return response;
 
-            return ResponseEntity.ok(new ApiResponse(true, "User Login Successfully", List.of(userResponse)));
-
-        } catch (UsernameNotFoundException | BadCredentialsException e) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN)
-                    .body(new ApiResponse(false, "Invalid Credentials"));
-        } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(new ApiResponse(false, "Internal Server Error", e.getMessage()));
-        }
+        // } catch (UsernameNotFoundException | BadCredentialsException e) {
+        //     return ResponseEntity.status(HttpStatus.FORBIDDEN)
+        //             .body(new ApiResponse(false, "Invalid Credentials"));
+        // } catch (Exception e) {
+        //     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+        //             .body(new ApiResponse(false, "Internal Server Error", e.getMessage()));
+        // }
     }
 
     private Optional<Document> fetchUserDetails(String userId, String projectId) {
@@ -135,47 +117,6 @@ public class AssetServiceImpl implements AssetService {
         userDataMap.put("companyId", requiredFields.getString("companyId"));
 
         return userDataMap;
-    }
-
-    public String generateJwtToken(String email, Map<String, Object> additionalData) throws UnknownHostException {
-        // Retrieve server IP address from the request
-        String serverIp = InetAddress.getLocalHost().getHostAddress();
-
-        return Jwts.builder()
-                .subject(email)
-                .claims(additionalData)
-                .claim("serverIp", serverIp)
-                .setIssuedAt(new Date())
-                .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(key(), SignatureAlgorithm.HS256)
-                .compact();
-    }
-
-    public String generateRefreshJwtToken(String email, Map<String, Object> additionalData) {
-        // Retrieve server IP address from the request
-        String serverIp = getServerIpAddress();
-
-        return Jwts.builder()
-                .subject(email)
-                .claims(additionalData)
-                .claim("serverIp", serverIp)
-                .issuedAt(new Date())
-                .expiration(new Date((new Date()).getTime() + jwtExpirationMs))
-                .signWith(key(), SignatureAlgorithm.HS256)
-                .compact();
-    }
-
-    private String getServerIpAddress() {
-        try {
-            return InetAddress.getLocalHost().getHostAddress();
-        } catch (UnknownHostException e) {
-            return null; 
-        }
-    }
-
-    public Date getExpirationDateFromJwtToken(String token) {
-        Claims claims = Jwts.parser().setSigningKey(key()).build().parseClaimsJws(token).getBody();
-        return claims.getExpiration();
     }
 
 }
