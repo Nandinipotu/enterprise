@@ -13,7 +13,8 @@ import lombok.NoArgsConstructor;
 public class ProjectsDTO {
     private String projectId;
     private String projectName;
-    private Path imagePath;
-    private URI projectURL;
+    private String fileName;
+    private String imagePath;
+    private String projectURL;
 
 }

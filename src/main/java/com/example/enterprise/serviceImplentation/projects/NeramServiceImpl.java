@@ -11,6 +11,8 @@ import java.util.Optional;
 
 import org.bson.Document;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.LookupOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
@@ -54,25 +56,26 @@ public class NeramServiceImpl implements NeramService {
         String userId = AuthUserDetails.getUserId();
         Optional<Document> userDetailsOpt = fetchUserDetails(userId, projectId);
         if (userDetailsOpt.isEmpty()) {
-            response.put("error","User details not found");
+            response.put("error", "User details not found");
             return response;
         }
 
         Map<String, Object> data = getClaims(userDetailsOpt.get());
         String userName = data.get("employee_id").toString();
         String jwt = projectAccessToken.generateTokenFromUsernameintoClaims(userName, data, SECRET);
-        // AssetResponse userResponse = new AssetResponse();
-        // userResponse.setToken(jwt);
-        response.put("token",jwt);
-        return response;
+        Criteria criteria = Criteria.where("userId").is(userId).and("projectId").is(projectId);
+        LookupOperation projectLookup = Aggregation.lookup("projects", "projectId", "projectId", "projectDetails");
 
-        // } catch (UsernameNotFoundException | BadCredentialsException e) {
-        // return ResponseEntity.status(HttpStatus.FORBIDDEN)
-        // .body(new ApiResponse(false, "Invalid Credentials"));
-        // } catch (Exception e) {
-        // return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-        // .body(new ApiResponse(false, "Internal Server Error", e.getMessage()));
-        // }
+        Aggregation aggregation = Aggregation.newAggregation(
+                Aggregation.match(criteria),
+                projectLookup,
+                Aggregation.unwind("projectDetails", true),
+                Aggregation.project("projectDetails.projectURL").andExclude("_id"));
+        Map<String, String> result = mongoTemplate.aggregate(aggregation, "enterprise_user_projects", Map.class)
+                .getUniqueMappedResult();
+        response.put("token", jwt);
+        response.put("url", result.get("projectURL"));
+        return response;
 
     }
 

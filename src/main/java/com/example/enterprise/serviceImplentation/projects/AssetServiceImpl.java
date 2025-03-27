@@ -7,14 +7,18 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.data.mongodb.core.aggregation.Aggregation;
+import org.springframework.data.mongodb.core.aggregation.LookupOperation;
 import org.springframework.data.mongodb.core.query.Criteria;
 import org.springframework.data.mongodb.core.query.Query;
 import org.springframework.http.HttpStatus;
@@ -22,7 +26,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
-
 
 import com.example.enterprise.dto.response.AssetResponse;
 import com.example.enterprise.entity.RefreshToken;
@@ -56,37 +59,38 @@ public class AssetServiceImpl implements AssetService {
     public Map<String, Object> assetSignIn(String projectId, HttpServletRequest request) throws UnknownHostException {
         // try {
 
-            Map<String, Object> response = new HashMap<>();
+        Map<String, Object> response = new HashMap<>();
 
-            String userId = AuthUserDetails.getUserId();
-            String userEmail = authUserDetails.getUserDetailsFromJwt(request);
+        String userId = AuthUserDetails.getUserId();
+        String userEmail = authUserDetails.getUserDetailsFromJwt(request);
 
-            Optional<Document> userDetailsOpt = fetchUserDetails(userId, projectId);
+        Optional<Document> userDetailsOpt = fetchUserDetails(userId, projectId);
 
-            if (userDetailsOpt.isEmpty()) {
-                response.put("error","User details not found");
-                return response;
-            }
-
-            Document userDetails = userDetailsOpt.get();
-
-            Map<String, Object> userDataMap = buildUserDataMap(userDetails, request);
-
-            String jwt = projectAccessToken.generateTokenFromUsernamewithIp(userEmail, userDataMap,jwtExpirationMs,SECRET_KEY);
-
-            // Prepare response object
-            // AssetResponse userResponse = new AssetResponse();
-            // userResponse.setToken(jwt);
-            response.put("token", jwt);
+        if (userDetailsOpt.isEmpty()) {
+            response.put("error", "User details not found");
             return response;
+        }
 
-        // } catch (UsernameNotFoundException | BadCredentialsException e) {
-        //     return ResponseEntity.status(HttpStatus.FORBIDDEN)
-        //             .body(new ApiResponse(false, "Invalid Credentials"));
-        // } catch (Exception e) {
-        //     return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-        //             .body(new ApiResponse(false, "Internal Server Error", e.getMessage()));
-        // }
+        Document userDetails = userDetailsOpt.get();
+
+        Map<String, Object> userDataMap = buildUserDataMap(userDetails, request);
+
+        String jwt = projectAccessToken.generateTokenFromUsernamewithIp(userEmail, userDataMap, jwtExpirationMs,
+                SECRET_KEY);
+        Criteria criteria = Criteria.where("userId").is(userId).and("projectId").is(projectId);
+        LookupOperation projectLookup = Aggregation.lookup("projects", "projectId", "projectId", "projectDetails");
+
+        Aggregation aggregation = Aggregation.newAggregation(
+                Aggregation.match(criteria),
+                projectLookup,
+                Aggregation.unwind("projectDetails", true),
+                Aggregation.project("projectDetails.projectURL").andExclude("_id"));
+        Map<String, String> result = mongoTemplate.aggregate(aggregation, "enterprise_user_projects", Map.class)
+                .getUniqueMappedResult();
+        response.put("token", jwt);
+        response.put("url", result.get("projectURL"));
+        return response;
+
     }
 
     private Optional<Document> fetchUserDetails(String userId, String projectId) {
@@ -103,15 +107,42 @@ public class AssetServiceImpl implements AssetService {
         }
 
         Document requiredFields = requiredFieldsList.get(0);
-
+        System.out.println("requiredFields  :" + requiredFields);
         Map<String, Object> userDataMap = new HashMap<>();
         userDataMap.put("id", requiredFields.getString("id"));
         userDataMap.put("domain", requiredFields.getString("domain"));
         userDataMap.put("phoneNo", requiredFields.getString("phoneNo"));
         userDataMap.put("plant", requiredFields.getString("plant"));
-        userDataMap.put("role", userDetails.getString("role"));
+        // userDataMap.put("role", userDetails.get("role"));
+        List<Document> roles = (List<Document>) requiredFields.get("role");
+
+        List<Map<String, String>> roleList = new ArrayList<>();
+
+        if (roles != null && !roles.isEmpty()) {
+            for (Document roleDoc : roles) {
+                Object authorityObj = roleDoc.get("authority"); 
+
+                if (authorityObj instanceof String) {
+                    // If it's a single string, wrap it in a map
+                    Map<String, String> roleMap = new HashMap<>();
+                    roleMap.put("authority", (String) authorityObj);
+                    roleList.add(roleMap);
+                } else if (authorityObj instanceof List) {
+                    // If it's a list, iterate over it
+                    List<String> authorities = (List<String>) authorityObj;
+                    for (String authority : authorities) {
+                        Map<String, String> roleMap = new HashMap<>();
+                        roleMap.put("authority", authority);
+                        roleList.add(roleMap);
+                    }
+                }
+            }
+        }
+
+        userDataMap.put("role", roleList);
+
         userDataMap.put("userId", requiredFields.getString("userId"));
-        userDataMap.put("username", requiredFields.getString("userName"));
+        userDataMap.put("username", requiredFields.getString("username"));
         userDataMap.put("email", authUserDetails.getUserDetailsFromJwt(request)); // Email is at root level
         userDataMap.put("profile", userDetails.getString("pictureWithPath")); // Assuming from root
         userDataMap.put("companyId", requiredFields.getString("companyId"));

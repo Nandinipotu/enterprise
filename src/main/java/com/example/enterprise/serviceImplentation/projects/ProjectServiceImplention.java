@@ -63,20 +63,15 @@ public class ProjectServiceImplention implements ProjectService {
                 projectLookup,
                 Aggregation.unwind("projectDetails", true),
                 Aggregation.project("projectDetails.projectId", "projectDetails.projectName",
-                        "projectDetails.projectURL"));
+                        "projectDetails.projectURL","projectDetails.fileName"));
 
         List<ProjectsDTO> results = mongoTemplate.aggregate(aggregation, "enterprise_user_projects", ProjectsDTO.class)
                 .getMappedResults();
-
-        results.forEach(dto -> {
-            try {
-                if (dto.getProjectURL() != null) {
-                    dto.setProjectURL(new URI(dto.getProjectURL().toString()));
-                }
-            } catch (URISyntaxException e) {
-                throw new RuntimeException("Invalid URL format: " + dto.getProjectURL(), e);
-            }
-        });
+                results.forEach(project ->{
+                    String path = fetchFilePath(project.getFileName());
+                    project.setImagePath(path);
+                });
+        
 
         return results;
     }
@@ -144,14 +139,8 @@ public class ProjectServiceImplention implements ProjectService {
                 .map(project -> {
                     ProjectsDTO dto = new ProjectsDTO();
                     BeanUtils.copyProperties(project, dto);
-                    if (project.getProjectURL() != null) {
-                        dto.setProjectURL(URI.create(project.getProjectURL()));
-                    }
-                    Path filePath = Paths.get(uploadsPath + project.getFileName());
-                    boolean file = Files.exists(filePath);
-                    if (file) {
-                        dto.setImagePath(filePath);
-                    }
+                    String filePath = fetchFilePath( project.getFileName());
+                    dto.setImagePath(filePath);
                     return dto;
                 })
                 .toList();
@@ -186,7 +175,7 @@ public class ProjectServiceImplention implements ProjectService {
                 throw new IOException("Could not create upload directory", e);
             }
         }
-        String originalFilename =file.getOriginalFilename();
+        String originalFilename = file.getOriginalFilename();
         String[] parts = originalFilename.split("\\.");
         String fileExtension = parts.length > 1 ? parts[parts.length - 1] : "";
         String newFileName = fileName + "." + fileExtension.toString();
@@ -194,5 +183,16 @@ public class ProjectServiceImplention implements ProjectService {
         Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
 
         return fileName;
+    }
+
+    private String fetchFilePath(String fileName) {
+        Path filePath = Paths.get(uploadsPath + fileName);
+        boolean file = Files.exists(filePath);
+        if(file){
+            return filePath.toUri().toString();
+        }
+        else{
+            return null;
+        }
     }
 }
